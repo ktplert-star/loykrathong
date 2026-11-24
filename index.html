@@ -67,6 +67,12 @@ button:disabled{opacity:.45}
 .wish.show{opacity:1;transform:none}
 .wish .w{font-size:17px;font-weight:300;line-height:1.6;white-space:pre-wrap}
 .hint{text-align:center;font-size:13px;opacity:.7;margin-top:8px}
+.kw{display:inline-flex;flex-direction:column;align-items:center}
+.pol{background:#fff;padding:5px 5px 14px;border-radius:4px;transform:rotate(-4deg);box-shadow:0 0 22px rgba(255,209,102,.55),0 4px 12px rgba(0,0,0,.4);margin-bottom:-4px}
+.pol img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:2px}
+.photoRow{display:flex;gap:8px;align-items:center}
+.photoRow button{margin-top:0}
+#photoInput{display:none}
 .big{font-size:22px;text-align:center;font-weight:400;margin:4px 0 12px;text-shadow:0 0 18px rgba(255,209,102,.7)}
 </style>
 </head>
@@ -104,6 +110,12 @@ button:disabled{opacity:.45}
       </div>
       <label>สีดอกไม้</label>
       <div class="row" id="colorOpts"></div>
+      <label>รูปที่จะลอยไปกับกระทง (ไม่ใส่ก็ได้)</label>
+      <input type="file" id="photoInput" accept="image/*">
+      <div class="photoRow">
+        <button type="button" class="ghost" id="photoBtn" style="flex:2">📷 เลือกรูป</button>
+        <button type="button" class="ghost" id="photoDel" style="flex:1;display:none">ลบรูป</button>
+      </div>
       <label>คำอธิษฐาน (แฟนจะเห็นตอนลอยแล้วเท่านั้น 🤫)</label>
       <textarea id="wish" maxlength="300" placeholder="ขอให้…"></textarea>
       <button id="readyBtn">ทำเสร็จแล้ว พร้อมลอย 🕯️</button>
@@ -211,6 +223,12 @@ function kt(base, color, lit, w=130){
     ${flame}</svg>`;
 }
 
+/* krathong + optional floating photo */
+function ktw(info, lit, w){
+  const ph = info.photo ? `<div class="pol" style="width:${Math.round(w*0.5)}px"><img src="${esc(info.photo)}" onerror="this.closest('.pol').remove()"></div>` : '';
+  return `<div class="kw">${ph}${kt(info.base, info.color, lit, w)}</div>`;
+}
+
 /* ---------- network (ntfy.sh pub/sub) ---------- */
 const topic = room ? 'loykrathong-' + room : null;
 function send(type, data={}){
@@ -260,7 +278,27 @@ function buildForm(){
   const saved = localStorage.getItem('lk-name'); if(saved) $('name').value=saved;
   upPrev();
 }
-function upPrev(){ $('myPreview').innerHTML = kt(selBase, selColor, false, 170); }
+function upPrev(){ $('myPreview').innerHTML = ktw({base:selBase, color:selColor, photo:photoURL}, false, 170); }
+
+let photoBlob=null, photoURL='';
+function resizeImage(file){
+  return new Promise((ok,bad)=>{
+    const img=new Image(), u=URL.createObjectURL(file);
+    img.onload=()=>{
+      const m=900, sc=Math.min(1, m/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u);
+      c.toBlob(b=>b?ok(b):bad(), 'image/jpeg', 0.85);
+    };
+    img.onerror=bad; img.src=u;
+  });
+}
+async function uploadPhoto(){
+  const r = await fetch(NTFY+topic+'?filename=photo.jpg&message='+encodeURIComponent(JSON.stringify({f:me,t:'upload'})), {method:'PUT', body:photoBlob});
+  if(!r.ok) throw new Error('upload '+r.status);
+  const j = await r.json();
+  return j.attachment && j.attachment.url;
+}
 
 function updateMake(){
   const j=S.joined[them], r=S.info[them];
@@ -271,8 +309,8 @@ function updateMake(){
   $('makeForm').style.display = mine ? 'none' : 'block';
   $('waitCard').style.display = mine ? 'block' : 'none';
   if(mine){
-    $('waitMine').innerHTML = kt(mine.base, mine.color, false, 120); $('waitMineName').textContent = mine.name;
-    $('waitTheirs').innerHTML = r ? kt(r.base, r.color, false, 120) : '<div style="font-size:50px;opacity:.4;padding:20px">⏳</div>';
+    $('waitMine').innerHTML = ktw(mine, false, 120); $('waitMineName').textContent = mine.name;
+    $('waitTheirs').innerHTML = r ? ktw(r, false, 120) : '<div style="font-size:50px;opacity:.4;padding:20px">⏳</div>';
     $('waitTheirsName').textContent = themName();
     $('waitText').textContent = `รอ ${themName()} ทำกระทงอยู่…`;
   }
@@ -283,8 +321,8 @@ function enterLight(){
   show('s-light');
   if(lightOn) return; lightOn=true;
   const a=S.info[me], b=S.info[them];
-  $('lightMine').innerHTML=kt(a.base,a.color,false,120); $('lightMineName').textContent=a.name;
-  $('lightTheirs').innerHTML=kt(b.base,b.color,false,120); $('lightTheirsName').textContent=b.name;
+  $('lightMine').innerHTML=ktw(a,false,120); $('lightMineName').textContent=a.name;
+  $('lightTheirs').innerHTML=ktw(b,false,120); $('lightTheirsName').textContent=b.name;
   $('iThemName').textContent=b.name;
   const btn=$('holdBtn');
   const down=e=>{ e.preventDefault(); if(S.hold[me]) return; S.hold[me]=true; btn.classList.add('active'); send('hold',{on:true}); updateHold(); checkLit(); };
@@ -317,7 +355,7 @@ function enterFloat(){
   if(floatOn) return; floatOn=true;
   const a=S.info[me], b=S.info[them];
   const mk=(info,left)=>{ const d=document.createElement('div'); d.className='fk'; d.style.left=left;
-    d.innerHTML=`<div class="nm">${esc(info.name)}</div><div class="bob">${kt(info.base,info.color,true,Math.min(150,innerWidth*0.34))}</div>`;
+    d.innerHTML=`<div class="nm">${esc(info.name)}</div><div class="bob">${ktw(info,true,Math.min(150,innerWidth*0.34))}</div>`;
     $('floaters').appendChild(d); return d; };
   const ka=mk(a,'14%'), kb=mk(b,'86%');
   kb.querySelector('.bob').style.animationDelay='-1.4s';
@@ -377,10 +415,25 @@ if(room){
   const msg=`มาลอยกระทงด้วยกันนะ 🪷 ${link}`;
   $('copyBtn').onclick=()=>{ navigator.clipboard.writeText(link).then(()=>$('copyBtn').textContent='คัดลอกแล้ว ✓'); };
   $('lineBtn').onclick=()=>window.open('https://line.me/R/msg/text/?'+encodeURIComponent(msg));
-  $('readyBtn').onclick=()=>{
+  $('photoBtn').onclick=()=>$('photoInput').click();
+  $('photoInput').onchange=async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    $('photoBtn').textContent='กำลังโหลดรูป…';
+    try{ photoBlob=await resizeImage(f); if(photoURL) URL.revokeObjectURL(photoURL); photoURL=URL.createObjectURL(photoBlob);
+      $('photoBtn').textContent='📷 เปลี่ยนรูป'; $('photoDel').style.display='block'; upPrev();
+    }catch(err){ $('photoBtn').textContent='📷 เปิดรูปนี้ไม่ได้ ลองรูปอื่น'; }
+    e.target.value='';
+  };
+  $('photoDel').onclick=()=>{ photoBlob=null; photoURL=''; $('photoBtn').textContent='📷 เลือกรูป'; $('photoDel').style.display='none'; upPrev(); };
+  $('readyBtn').onclick=async ()=>{
     const name=$('name').value.trim(); if(!name){ $('name').focus(); $('name').placeholder='ใส่ชื่อก่อนน้า'; return; }
     localStorage.setItem('lk-name',name);
     const d={name, base:selBase, color:selColor, wish:$('wish').value.trim().slice(0,300)};
+    if(photoBlob){
+      const btn=$('readyBtn'); btn.disabled=true; btn.textContent='กำลังส่งรูป…';
+      try{ d.photo=await uploadPhoto(); }
+      catch(err){ btn.disabled=false; btn.textContent='ส่งรูปไม่สำเร็จ ลองใหม่ หรือลบรูปออก'; return; }
+    }
     S.info[me]=d; S.names[me]=name; send('ready',d); render();
   };
   connect();
