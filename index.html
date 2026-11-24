@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ลอยกระทงด้วยกัน 🪷</title>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;font-family:'Mitr',sans-serif;color:#fff;background:#060a24}
+#sky{position:fixed;inset:0;background:radial-gradient(ellipse at 70% 10%,#26306b 0%,#0b1238 45%,#050821 100%)}
+.star{position:absolute;background:#fff;border-radius:50%;animation:tw 3s infinite ease-in-out}
+@keyframes tw{0%,100%{opacity:.25}50%{opacity:1}}
+.moon{position:fixed;top:7vh;right:12vw;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fffbe6,#ffe8a3);box-shadow:0 0 40px 12px rgba(255,236,170,.45)}
+#river{position:fixed;left:0;right:0;bottom:0;height:34vh;background:linear-gradient(#0d1d4d,#06102e 70%);overflow:hidden}
+#river::before{content:'';position:absolute;left:-50%;width:200%;top:0;bottom:0;background:repeating-linear-gradient(0deg,transparent 0 14px,rgba(140,180,255,.07) 14px 16px);animation:flow 9s linear infinite}
+#river::after{content:'';position:absolute;right:calc(12vw - 10px);top:0;width:90px;height:100%;background:linear-gradient(rgba(255,236,170,.35),transparent 80%);filter:blur(10px)}
+@keyframes flow{from{transform:translateX(0)}to{transform:translateX(25%)}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:2}
+#lanterns,#hearts{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.lantern{position:absolute;bottom:-60px;width:22px;height:30px;border-radius:40% 40% 30% 30%;background:radial-gradient(circle at 50% 70%,#fff3b0,#ff9a3c 60%,#d9541e);box-shadow:0 0 18px 6px rgba(255,160,60,.5);animation:rise linear forwards}
+@keyframes rise{to{transform:translate(var(--dx),-115vh) scale(.4);opacity:.2}}
+.heart{position:absolute;font-size:34px;animation:hup 2.6s ease-out forwards;transform:translate(-50%,-50%)}
+@keyframes hup{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-260%) scale(1)}}
+#ui{position:fixed;inset:0;z-index:5;overflow-y:auto;display:flex;justify-content:center;align-items:flex-start;padding:18px 14px 30px}
+.screen{display:none;width:100%;max-width:420px}
+.screen.on{display:block}
+.card{background:rgba(20,28,70,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+h1{font-weight:500;font-size:28px;margin:4px 0 6px;text-align:center}
+h2{font-weight:500;font-size:20px;margin:0 0 10px}
+p{font-weight:300;line-height:1.55;margin:6px 0}
+.sub{text-align:center;opacity:.8}
+label{display:block;font-size:14px;opacity:.85;margin:14px 0 6px}
+input,textarea{width:100%;font:inherit;font-weight:300;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;outline:none}
+textarea{min-height:84px;resize:none}
+input:focus,textarea:focus{border-color:#ffd166}
+button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:12px 16px;font-weight:500;color:#2a1600;background:linear-gradient(135deg,#ffd166,#ff9a3c);width:100%;margin-top:16px;box-shadow:0 6px 20px rgba(255,154,60,.35)}
+button.ghost{background:rgba(255,255,255,.1);color:#fff;box-shadow:none;border:1px solid rgba(255,255,255,.2)}
+button:disabled{opacity:.45}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.opt{flex:1;min-width:70px;padding:9px 6px;border-radius:12px;text-align:center;background:rgba(255,255,255,.07);border:2px solid transparent;cursor:pointer;font-size:14px;font-weight:300}
+.opt.sel{border-color:#ffd166;background:rgba(255,209,102,.15)}
+.dot{width:34px;height:34px;flex:0 0 34px;min-width:0;padding:0;border-radius:50%}
+.preview{display:flex;justify-content:center;margin:6px 0 -6px}
+.status{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:300;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.07);margin-bottom:12px}
+.pulse{width:10px;height:10px;border-radius:50%;background:#888;flex:0 0 10px}
+.pulse.on{background:#4ade80;box-shadow:0 0 10px #4ade80}
+.pulse.wait{background:#ffd166;animation:tw 1.2s infinite}
+.share{margin-top:12px;padding:14px;border-radius:14px;background:rgba(255,209,102,.1);border:1px dashed rgba(255,209,102,.5)}
+.share code{display:block;word-break:break-all;font-size:12px;opacity:.85;margin:6px 0}
+.pair{display:flex;justify-content:space-around;align-items:flex-end;margin:10px 0}
+.pair .who{text-align:center;font-size:14px;font-weight:300}
+#holdBtn{position:relative;width:150px;height:150px;border-radius:50%;margin:18px auto 6px;display:block;font-size:44px;padding:0;user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden}
+#holdBtn.active{transform:scale(.95);box-shadow:0 0 40px rgba(255,209,102,.9)}
+#holdFill{position:absolute;left:0;right:0;bottom:0;height:0;background:rgba(255,255,255,.45);pointer-events:none}
+#holdBtn span{position:relative;pointer-events:none}
+.ind{display:flex;justify-content:center;gap:18px;font-size:14px;font-weight:300;margin-top:8px}
+.ind b{font-weight:400}
+.flame{transform-origin:100px 52px;animation:flick .18s infinite alternate}
+@keyframes flick{from{transform:scale(1,1)}to{transform:scale(.92,1.08)}}
+.fk{position:fixed;bottom:7vh;z-index:4;transition:left 7s ease-in-out;transform:translateX(-50%)}
+.fk .bob{animation:bob 3.2s ease-in-out infinite}
+.fk .nm{text-align:center;font-size:13px;opacity:.85;margin-bottom:-8px}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+#s-float{max-width:520px}
+.wish{opacity:0;transform:translateY(10px);transition:all 1.2s;margin-bottom:10px}
+.wish.show{opacity:1;transform:none}
+.wish .w{font-size:17px;font-weight:300;line-height:1.6;white-space:pre-wrap}
+.hint{text-align:center;font-size:13px;opacity:.7;margin-top:8px}
+.big{font-size:22px;text-align:center;font-weight:400;margin:4px 0 12px;text-shadow:0 0 18px rgba(255,209,102,.7)}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<div class="moon"></div>
+<div id="river"></div>
+<canvas id="fx"></canvas>
+<div id="lanterns"></div>
+<div id="floaters"></div>
+<div id="hearts"></div>
+
+<div id="ui">
+  <!-- HOME -->
+  <div class="screen" id="s-home"><div class="card">
+    <h1>🪷 ลอยกระทงด้วยกัน</h1>
+    <p class="sub">ถึงตัวจะอยู่ไกล แต่กระทงเราลอยไปด้วยกันได้</p>
+    <p style="font-size:14px;opacity:.75;margin-top:14px">1) สร้างห้อง แล้วส่งลิงก์ให้แฟน<br>2) ต่างคนต่างทำกระทง + อธิษฐานแบบลับ<br>3) กดค้างพร้อมกันเพื่อจุดเทียน<br>4) ลอยกระทงด้วยกัน แล้วเปิดดูคำอธิษฐานของกันและกัน</p>
+    <button id="createBtn">สร้างห้องลอยกระทง ✨</button>
+  </div></div>
+
+  <!-- MAKE -->
+  <div class="screen" id="s-make">
+    <div class="status"><div class="pulse" id="pStatus"></div><div id="tStatus">รอแฟนเข้าห้อง…</div></div>
+    <div class="card" id="makeForm">
+      <h2>ทำกระทงของเรา</h2>
+      <div class="preview" id="myPreview"></div>
+      <label>ชื่อเรา</label>
+      <input id="name" maxlength="20" placeholder="เช่น James">
+      <label>ฐานกระทง</label>
+      <div class="row" id="baseOpts">
+        <div class="opt sel" data-v="leaf">🍃 ใบตอง</div>
+        <div class="opt" data-v="bread">🍞 ขนมปัง</div>
+        <div class="opt" data-v="lotus">🪷 กลีบบัว</div>
+      </div>
+      <label>สีดอกไม้</label>
+      <div class="row" id="colorOpts"></div>
+      <label>คำอธิษฐาน (แฟนจะเห็นตอนลอยแล้วเท่านั้น 🤫)</label>
+      <textarea id="wish" maxlength="300" placeholder="ขอให้…"></textarea>
+      <button id="readyBtn">ทำเสร็จแล้ว พร้อมลอย 🕯️</button>
+    </div>
+    <div class="card" id="waitCard" style="display:none;text-align:center">
+      <h2>กระทงเราเสร็จแล้ว ✨</h2>
+      <div class="pair">
+        <div class="who"><div id="waitMine"></div><div id="waitMineName"></div></div>
+        <div class="who"><div id="waitTheirs"></div><div id="waitTheirsName"></div></div>
+      </div>
+      <p id="waitText">รอแฟนทำกระทงอยู่…</p>
+    </div>
+    <div class="share" id="shareBox" style="display:none">
+      <b>📩 ส่งลิงก์นี้ให้แฟน</b>
+      <code id="shareLink"></code>
+      <div class="row">
+        <button id="copyBtn" class="ghost" style="flex:1;margin-top:6px">คัดลอกลิงก์</button>
+        <button id="lineBtn" style="flex:1;margin-top:6px;background:#06c755;color:#fff;box-shadow:none">ส่งทาง LINE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT -->
+  <div class="screen" id="s-light"><div class="card" style="text-align:center">
+    <h2>จุดเทียนพร้อมกัน 🕯️</h2>
+    <p style="font-size:14px;opacity:.8">ทั้งสองคนต้อง <b>กดค้าง</b> ปุ่มข้างล่างพร้อมกัน จนเทียนติด<br>ถ้าใครปล่อยก่อน ต้องเริ่มใหม่นะ</p>
+    <div class="pair">
+      <div class="who"><div id="lightMine"></div><div id="lightMineName"></div></div>
+      <div class="who"><div id="lightTheirs"></div><div id="lightTheirsName"></div></div>
+    </div>
+    <button id="holdBtn"><div id="holdFill"></div><span>🔥</span></button>
+    <div class="ind"><div>เรา: <b id="iMe">ยังไม่กด</b></div><div><span id="iThemName">แฟน</span>: <b id="iThem">ยังไม่กด</b></div></div>
+  </div></div>
+
+  <!-- FLOAT -->
+  <div class="screen" id="s-float">
+    <div class="big" id="floatTitle">ลอยไปด้วยกันนะ 💛</div>
+    <div class="card wish" id="wishThem"><div style="opacity:.75;font-size:13px" id="wishThemName"></div><div class="w" id="wishThemText"></div></div>
+    <div class="card wish" id="wishMe"><div style="opacity:.75;font-size:13px" id="wishMeName"></div><div class="w" id="wishMeText"></div></div>
+    <div class="hint" id="tapHint" style="display:none">แตะตรงไหนก็ได้บนจอ เพื่อส่งหัวใจไปหาอีกคน 💗</div>
+  </div>
+</div>
+
+<script>
+const NTFY = 'https://ntfy.sh/';
+const COLORS = ['#ff7eb6','#ffd166','#ffffff','#b48cff','#ff5a5f','#7ee0ff'];
+const qs = new URLSearchParams(location.search);
+const room = qs.get('room');
+const me = room ? (+(qs.get('p')) === 1 ? 1 : 2) : 0;
+const them = me === 1 ? 2 : 1;
+const S = { info:{1:null,2:null}, joined:{1:false,2:false}, names:{1:'',2:''}, hold:{1:false,2:false}, lit:false };
+const seen = new Set();
+const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nowS = () => Date.now()/1000;
+
+/* ---------- background ---------- */
+(() => {
+  const sky = $('sky');
+  for (let i=0;i<140;i++){
+    const s=document.createElement('div'); s.className='star';
+    const z=Math.random()*2+0.6;
+    s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*66}%;animation-delay:${Math.random()*3}s`;
+    sky.appendChild(s);
+  }
+})();
+function lantern(){
+  const l=document.createElement('div'); l.className='lantern';
+  const dur=14+Math.random()*10;
+  l.style.left=Math.random()*100+'%';
+  l.style.setProperty('--dx',(Math.random()*120-60)+'px');
+  l.style.animationDuration=dur+'s';
+  $('lanterns').appendChild(l); setTimeout(()=>l.remove(),dur*1000);
+}
+setInterval(lantern, 2600); lantern();
+
+/* ---------- krathong svg ---------- */
+function kt(base, color, lit, w=130){
+  base = base||'leaf'; color = color||COLORS[0];
+  let b = '';
+  if (base==='bread'){
+    b = `<ellipse cx="100" cy="122" rx="78" ry="20" fill="#b9803d"/><ellipse cx="100" cy="116" rx="76" ry="18" fill="#dca560"/>`;
+    for(let i=0;i<14;i++){ b+=`<circle cx="${40+Math.random()*120}" cy="${108+Math.random()*16}" r="1.6" fill="#a86d2c"/>`; }
+  } else {
+    const c = base==='lotus' ? ['#ffb3cf','#e27aa3'] : ['#4caf5c','#2c7a3a'];
+    b = `<ellipse cx="100" cy="124" rx="80" ry="18" fill="${c[1]}"/>`;
+    for(let i=-4;i<=4;i++){ const x=100+i*17, h= base==='lotus'? 34-Math.abs(i)*3 : 30-Math.abs(i)*2;
+      b+= base==='lotus'
+        ? `<path d="M${x-11} 124 Q${x-10} ${124-h} ${x} ${118-h} Q${x+10} ${124-h} ${x+11} 124 Z" fill="${c[0]}" stroke="${c[1]}" stroke-width="1.5"/>`
+        : `<path d="M${x-10} 124 L${x} ${120-h} L${x+10} 124 Z" fill="${c[0]}" stroke="${c[1]}" stroke-width="1.5"/>`;
+    }
+  }
+  let fl='';
+  [[-34,104],[34,104],[-18,98],[18,98],[0,96]].forEach(([dx,y])=>{
+    for(let a=0;a<360;a+=60) fl+=`<ellipse cx="${100+dx}" cy="${y-7}" rx="4.5" ry="8" fill="${color}" stroke="rgba(0,0,0,.15)" transform="rotate(${a} ${100+dx} ${y})"/>`;
+    fl+=`<circle cx="${100+dx}" cy="${y}" r="3.5" fill="#ffcf4a"/>`;
+  });
+  const flame = lit ? `<g class="flame"><ellipse cx="100" cy="44" rx="14" ry="18" fill="rgba(255,190,80,.35)"/><path d="M100 30 Q109 44 100 54 Q91 44 100 30Z" fill="#ffb03a"/><path d="M100 38 Q104 46 100 52 Q96 46 100 38Z" fill="#fff4c2"/></g>` : '';
+  return `<svg width="${w}" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+    ${lit?'<ellipse cx="100" cy="140" rx="70" ry="8" fill="rgba(255,190,80,.25)"/>':''}
+    ${b}${fl}
+    <line x1="84" y1="96" x2="78" y2="58" stroke="#c96a3a" stroke-width="2"/><line x1="116" y1="96" x2="122" y2="58" stroke="#c96a3a" stroke-width="2"/>
+    <circle cx="78" cy="58" r="1.8" fill="#ff6a3a"/><circle cx="122" cy="58" r="1.8" fill="#ff6a3a"/>
+    <rect x="95" y="54" width="10" height="44" rx="2" fill="#fff6d5"/><line x1="100" y1="54" x2="100" y2="49" stroke="#333" stroke-width="1.5"/>
+    ${flame}</svg>`;
+}
+
+/* ---------- network (ntfy.sh pub/sub) ---------- */
+const topic = room ? 'loykrathong-' + room : null;
+function send(type, data={}){
+  if(!topic) return;
+  fetch(NTFY+topic, {method:'POST', body: JSON.stringify({f:me, t:type, d:data})}).catch(()=>{});
+}
+function connect(){
+  const es = new EventSource(NTFY+topic+'/sse?since=all');
+  es.onmessage = ev => {
+    let m; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+    if(m.event!=='message' || seen.has(m.id)) return;
+    seen.add(m.id);
+    let msg; try{ msg=JSON.parse(m.message); }catch(e){ return; }
+    handle(msg, m.time);
+  };
+}
+function handle(msg, time){
+  const f = msg.f, d = msg.d||{}, age = nowS()-time;
+  if(f!==1 && f!==2) return;
+  switch(msg.t){
+    case 'join': S.joined[f]=true; if(d.name) S.names[f]=d.name; break;
+    case 'ready': S.joined[f]=true; S.info[f]=d; S.names[f]=d.name; break;
+    case 'hold': if(f===me || age>15) return; S.hold[f]=!!d.on; updateHold(); checkLit(); return;
+    case 'lit': S.lit=true; break;
+    case 'hearts': if(f===me || age>12) return; (d.p||[]).forEach((p,i)=>setTimeout(()=>heart(p[0],p[1],'💗'),i*150)); return;
+    default: return;
+  }
+  render();
+}
+
+/* ---------- screens ---------- */
+function show(id){ document.querySelectorAll('.screen').forEach(e=>e.classList.toggle('on', e.id===id)); }
+function render(){
+  if(!room) return show('s-home');
+  if(S.lit) return enterFloat();
+  if(S.info[1] && S.info[2]) return enterLight();
+  show('s-make'); updateMake();
+}
+const themName = () => S.names[them] || 'แฟน';
+
+let selBase='leaf', selColor=COLORS[0];
+function buildForm(){
+  const co=$('colorOpts');
+  COLORS.forEach((c,i)=>{ const d=document.createElement('div'); d.className='opt dot'+(i?'':' sel'); d.style.background=c; d.dataset.v=c; co.appendChild(d); });
+  const pick=(wrap,cb)=>wrap.addEventListener('click',e=>{ const o=e.target.closest('.opt'); if(!o) return; wrap.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); cb(o.dataset.v); upPrev(); });
+  pick($('baseOpts'),v=>selBase=v); pick(co,v=>selColor=v);
+  const saved = localStorage.getItem('lk-name'); if(saved) $('name').value=saved;
+  upPrev();
+}
+function upPrev(){ $('myPreview').innerHTML = kt(selBase, selColor, false, 170); }
+
+function updateMake(){
+  const j=S.joined[them], r=S.info[them];
+  $('pStatus').className='pulse '+(r?'on':j?'wait':'');
+  $('tStatus').textContent = r ? `${themName()} ทำกระทงเสร็จแล้ว ✨` : j ? `${themName()} เข้ามาแล้ว กำลังทำกระทง…` : 'รอแฟนเข้าห้อง…';
+  $('shareBox').style.display = (me===1 && !j) ? 'block' : 'none';
+  const mine=S.info[me];
+  $('makeForm').style.display = mine ? 'none' : 'block';
+  $('waitCard').style.display = mine ? 'block' : 'none';
+  if(mine){
+    $('waitMine').innerHTML = kt(mine.base, mine.color, false, 120); $('waitMineName').textContent = mine.name;
+    $('waitTheirs').innerHTML = r ? kt(r.base, r.color, false, 120) : '<div style="font-size:50px;opacity:.4;padding:20px">⏳</div>';
+    $('waitTheirsName').textContent = themName();
+    $('waitText').textContent = `รอ ${themName()} ทำกระทงอยู่…`;
+  }
+}
+
+let lightOn=false;
+function enterLight(){
+  show('s-light');
+  if(lightOn) return; lightOn=true;
+  const a=S.info[me], b=S.info[them];
+  $('lightMine').innerHTML=kt(a.base,a.color,false,120); $('lightMineName').textContent=a.name;
+  $('lightTheirs').innerHTML=kt(b.base,b.color,false,120); $('lightTheirsName').textContent=b.name;
+  $('iThemName').textContent=b.name;
+  const btn=$('holdBtn');
+  const down=e=>{ e.preventDefault(); if(S.hold[me]) return; S.hold[me]=true; btn.classList.add('active'); send('hold',{on:true}); updateHold(); checkLit(); };
+  const up=e=>{ if(!S.hold[me]) return; S.hold[me]=false; btn.classList.remove('active'); send('hold',{on:false}); updateHold(); };
+  btn.addEventListener('pointerdown',down);
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>btn.addEventListener(t,up));
+  btn.addEventListener('contextmenu',e=>e.preventDefault());
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) up(); });
+}
+function updateHold(){
+  if(!lightOn) return;
+  $('iMe').textContent = S.hold[me] ? 'กดอยู่ 🔥' : 'ยังไม่กด';
+  $('iThem').textContent = S.hold[them] ? 'กดอยู่ 🔥' : 'ยังไม่กด';
+}
+let litTimer=null;
+function checkLit(){
+  if(S.lit || litTimer || !(S.hold[1]&&S.hold[2])) return;
+  const st=Date.now();
+  litTimer=setInterval(()=>{
+    const p=(Date.now()-st)/1800;
+    if(!(S.hold[1]&&S.hold[2])){ clearInterval(litTimer); litTimer=null; $('holdFill').style.height='0'; return; }
+    $('holdFill').style.height=Math.min(100,p*100)+'%';
+    if(p>=1){ clearInterval(litTimer); litTimer=null; S.lit=true; send('lit'); if(navigator.vibrate) navigator.vibrate(200); render(); }
+  },40);
+}
+
+let floatOn=false;
+function enterFloat(){
+  show('s-float');
+  if(floatOn) return; floatOn=true;
+  const a=S.info[me], b=S.info[them];
+  const mk=(info,left)=>{ const d=document.createElement('div'); d.className='fk'; d.style.left=left;
+    d.innerHTML=`<div class="nm">${esc(info.name)}</div><div class="bob">${kt(info.base,info.color,true,Math.min(150,innerWidth*0.34))}</div>`;
+    $('floaters').appendChild(d); return d; };
+  const ka=mk(a,'14%'), kb=mk(b,'86%');
+  kb.querySelector('.bob').style.animationDelay='-1.4s';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ ka.style.left='37%'; kb.style.left='63%'; }));
+  $('wishMeName').textContent=`คำอธิษฐานของ ${a.name}`; $('wishMeText').textContent=a.wish||'(ไม่ได้เขียน แต่ใจอยู่ในกระทงแล้ว)';
+  $('wishThemName').textContent=`คำอธิษฐานของ ${b.name}`; $('wishThemText').textContent=b.wish||'(ไม่ได้เขียน แต่ใจอยู่ในกระทงแล้ว)';
+  setTimeout(()=>$('wishThem').classList.add('show'),2500);
+  setTimeout(()=>$('wishMe').classList.add('show'),4000);
+  setTimeout(()=>$('tapHint').style.display='block',5000);
+  for(let i=0;i<6;i++) setTimeout(lantern,i*400);
+  startFireworks();
+  document.addEventListener('pointerdown',tapHeart);
+}
+
+/* ---------- hearts ---------- */
+let pending=[], flushT=null;
+function heart(xr,yr,ch){
+  const h=document.createElement('div'); h.className='heart'; h.textContent=ch;
+  h.style.left=(xr*100)+'%'; h.style.top=(yr*100)+'%';
+  $('hearts').appendChild(h); setTimeout(()=>h.remove(),2700);
+}
+function tapHeart(e){
+  if(e.target.closest('button,input,textarea')) return;
+  const x=e.clientX/innerWidth, y=e.clientY/innerHeight;
+  heart(x,y,'💛');
+  if(pending.length<8) pending.push([+x.toFixed(3),+y.toFixed(3)]);
+  if(!flushT) flushT=setTimeout(()=>{ send('hearts',{p:pending}); pending=[]; flushT=null; },2500);
+}
+
+/* ---------- fireworks ---------- */
+function startFireworks(){
+  const cv=$('fx'), cx=cv.getContext('2d'); let P=[];
+  const size=()=>{ cv.width=innerWidth*devicePixelRatio; cv.height=innerHeight*devicePixelRatio; cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); };
+  size(); addEventListener('resize',size);
+  const burst=()=>{ const x=innerWidth*(.15+Math.random()*.7), y=innerHeight*(.1+Math.random()*.35);
+    const hue=Math.random()*360, n=60;
+    for(let i=0;i<n;i++){ const a=i/n*Math.PI*2, s=1.5+Math.random()*2.5; P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,h:hue+Math.random()*30}); } };
+  let cnt=0; const iv=setInterval(()=>{ burst(); if(++cnt>14){ clearInterval(iv); setInterval(()=>{ if(Math.random()<.5) burst(); },4000);} },700);
+  (function loop(){
+    cx.clearRect(0,0,innerWidth,innerHeight);
+    P=P.filter(p=>p.l>0);
+    for(const p of P){ p.x+=p.vx; p.y+=p.vy; p.vy+=.03; p.vx*=.985; p.vy*=.985; p.l-=.012;
+      cx.globalAlpha=Math.max(0,p.l); cx.fillStyle=`hsl(${p.h},100%,65%)`; cx.beginPath(); cx.arc(p.x,p.y,2,0,7); cx.fill(); }
+    requestAnimationFrame(loop);
+  })();
+}
+
+/* ---------- boot ---------- */
+$('createBtn').onclick=()=>{
+  const id=Array.from(crypto.getRandomValues(new Uint8Array(9)),b=>'abcdefghijkmnpqrstuvwxyz23456789'[b%32]).join('');
+  location.href=`?room=${id}&p=1`;
+};
+if(room){
+  buildForm();
+  const link=location.origin+location.pathname+`?room=${room}&p=2`;
+  $('shareLink').textContent=link;
+  const msg=`มาลอยกระทงด้วยกันนะ 🪷 ${link}`;
+  $('copyBtn').onclick=()=>{ navigator.clipboard.writeText(link).then(()=>$('copyBtn').textContent='คัดลอกแล้ว ✓'); };
+  $('lineBtn').onclick=()=>window.open('https://line.me/R/msg/text/?'+encodeURIComponent(msg));
+  $('readyBtn').onclick=()=>{
+    const name=$('name').value.trim(); if(!name){ $('name').focus(); $('name').placeholder='ใส่ชื่อก่อนน้า'; return; }
+    localStorage.setItem('lk-name',name);
+    const d={name, base:selBase, color:selColor, wish:$('wish').value.trim().slice(0,300)};
+    S.info[me]=d; S.names[me]=name; send('ready',d); render();
+  };
+  connect();
+  setTimeout(()=>{ if(!S.joined[me]){ S.joined[me]=true; send('join',{name:localStorage.getItem('lk-name')||''}); } }, 1800);
+}
+render();
+</script>
+</body>
+</html>
